@@ -5,7 +5,7 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const uniqueValidator = require('mongoose-unique-validator');
-
+const { sendMessageToGemini } = require('./gemini');
 // Carregar variáveis de ambiente
 dotenv.config();
 
@@ -103,7 +103,7 @@ mongoose.connect(uri, {
 
 
 // Rota para criar um novo evento base
-app.post("/eventos", async(req, res) => {
+app.post("/eventos", async (req, res) => {
     try {
         const { nome, descricao, organizador } = req.body;
         const eventoBase = new EventoBase({ nome, descricao, organizador });
@@ -115,7 +115,7 @@ app.post("/eventos", async(req, res) => {
 });
 
 // Rota para cadastro de evento
-app.post("/cadastro", async(req, res) => {
+app.post("/cadastro", async (req, res) => {
     console.log("Requisição recebida para /cadastro");
     try {
         const {
@@ -173,7 +173,7 @@ app.post("/cadastro", async(req, res) => {
 });
 
 // Endpoint para alterar um evento
-app.put("/api/eventos/:id", async(req, res) => {
+app.put("/api/eventos/:id", async (req, res) => {
     try {
         const {
             nomeEvento,
@@ -222,7 +222,7 @@ app.put("/api/eventos/:id", async(req, res) => {
 
 
 // Endpoint para buscar um evento por ID
-app.get("/eventos/:id", async(req, res) => {
+app.get("/eventos/:id", async (req, res) => {
     try {
         const evento = await EventosCadastrados.findById(req.params.id);
         if (!evento) {
@@ -235,7 +235,7 @@ app.get("/eventos/:id", async(req, res) => {
 });
 
 // Endpoint para listar todos os eventos (nova rota)
-app.get('/api/eventos', async(req, res) => {
+app.get('/api/eventos', async (req, res) => {
     try {
         const eventos = await EventosCadastrados.find();
         res.json(eventos);
@@ -245,7 +245,7 @@ app.get('/api/eventos', async(req, res) => {
 });
 
 // Endpoint para listar todos os eventos
-app.get("/eventos", async(req, res) => {
+app.get("/eventos", async (req, res) => {
     try {
         const eventos = await EventosCadastrados.find();
         res.status(200).json(eventos);
@@ -255,7 +255,7 @@ app.get("/eventos", async(req, res) => {
 });
 
 // Rota para buscar um evento específico por ID
-app.get('/api/eventos/:id', async(req, res) => {
+app.get('/api/eventos/:id', async (req, res) => {
     try {
         const evento = await EventosCadastrados.findById(req.params.id);
         if (evento) {
@@ -272,7 +272,7 @@ app.get('/api/eventos/:id', async(req, res) => {
 
 
 // Rota para cadastro de usuário (signup)
-app.post('/signup', async(req, res) => {
+app.post('/signup', async (req, res) => {
     try {
         const { login, password } = req.body;
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -285,7 +285,7 @@ app.post('/signup', async(req, res) => {
 });
 
 // Rota para login de usuário
-app.post('/login', async(req, res) => {
+app.post('/login', async (req, res) => {
     try {
         const { login, password } = req.body;
         const usuario = await Usuario.findOne({ login });
@@ -302,3 +302,28 @@ app.post('/login', async(req, res) => {
         res.status(500).send("Erro ao realizar login");
     }
 });
+
+app.post('/api/chat', async (req, res) => {
+    try {
+        const { message } = req.body;
+
+        if (!message) {
+            return res.status(400).json({ error: "Mensagem é obrigatória" });
+        }
+
+        // Usar a função do gemini.js para enviar a mensagem ao Gemini
+        const response = await sendMessageToGemini(message);
+
+        // Retornar a resposta do Gemini
+        res.json({ response });
+    } catch (error) {
+        console.error("Erro ao processar a mensagem:", error);
+        res.status(500).json({ error: "Erro ao processar a mensagem" });
+    }
+});
+
+
+
+
+
+
